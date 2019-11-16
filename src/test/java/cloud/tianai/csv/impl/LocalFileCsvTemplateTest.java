@@ -13,7 +13,14 @@ import java.util.concurrent.TimeUnit;
 public class LocalFileCsvTemplateTest {
 
     public static void main(String[] args) {
-        CsvTemplate csvTemplate = CsvTemplateFactory.createCsvTemplate("temp-csv");
+//        CsvTemplate csvTemplate = CsvTemplateFactory.createCsvTemplate("temp-csv", CsvTemplateFactory.CsvTemplateEnum.OSS);
+        OssProperties properties = new OssProperties();
+        properties.setEndpoint("oss-cn-beijing.aliyuncs.com");
+        properties.setBucketName("csv-temp");
+        properties.setAccessKeyId("LTAI4FrWXJRB95NHYYLfhS7q");
+        properties.setAccessKeySecret("ZIiHnIIoARXiSLkExFHsyKdwv8vSt8");
+        OssCsvTemplate csvTemplate = new OssCsvTemplate(2048, 2048, properties);
+        csvTemplate.init("temp-csv");
         List<Object> title = new ArrayList<>();
 
         title.add("订单ID");
@@ -51,7 +58,6 @@ public class LocalFileCsvTemplateTest {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                System.out.println("开始读取数据===>");
                 Long rowNumber = csvTemplate.getRowNumber();
                 System.out.println("已添加 [" + rowNumber +"] 条数据.");
             }

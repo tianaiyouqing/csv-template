@@ -14,12 +14,9 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Random;
 
 /**
  * @Author: 天爱有情
@@ -36,8 +33,12 @@ public class LocalFileCsvTemplate extends AbstractLazyRefreshCsvTemplate {
     private FileChannel channel;
 
 
-    public LocalFileCsvTemplate(String tempFileDirectory) {
-        super(1024, 1024);
+    public LocalFileCsvTemplate(String tempFileDirectory, Integer memoryStorageCapacity, Integer threshold) {
+        super(memoryStorageCapacity, threshold);
+
+        if(!tempFileDirectory.endsWith("/")) {
+            tempFileDirectory += "/";
+        }
         LocalDateTime now = LocalDateTime.now();
         // 临时目录中加入时间区分
         String format = DateTimeFormatter.ofPattern("yyyy/MM/dd/").format(now);
@@ -45,7 +46,7 @@ public class LocalFileCsvTemplate extends AbstractLazyRefreshCsvTemplate {
     }
 
     public LocalFileCsvTemplate() {
-        this("./temp/");
+        this("./temp/", 1024, 1024);
     }
 
     @Override
@@ -86,6 +87,9 @@ public class LocalFileCsvTemplate extends AbstractLazyRefreshCsvTemplate {
 
     @Override
     protected void doInit(String fileName) throws CsvException {
+        // 调用父级初始化
+        super.doInit(fileName);
+
         String filePath = getFilePath(fileName, "");
         File file = new File(filePath);
         if(file.exists()) {

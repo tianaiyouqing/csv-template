@@ -8,6 +8,7 @@ import cloud.tianai.csv.exception.CsvException;
 import cloud.tianai.csv.util.ClassUtils;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Type;
 import java.util.*;
@@ -18,6 +19,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @Date: 2019/11/15 16:11
  * @Description: 抽象的csv模板实现
  */
+@Slf4j
 public abstract class AbstractCsvTemplate implements CsvTemplate {
 
     /**
@@ -39,6 +41,8 @@ public abstract class AbstractCsvTemplate implements CsvTemplate {
     /**
      * 数据转换器
      */
+    @Setter
+    @Getter
     private Map<Type, CsvDataConverter<Object>> converterMap = new HashMap<>(255);
 
     /**
@@ -65,17 +69,7 @@ public abstract class AbstractCsvTemplate implements CsvTemplate {
     public void init(String fileName) throws CsvException {
         // 标记状态为一已执行初始化方法
         this.init = true;
-        initConverter();
         doInit(fileName);
-    }
-
-    private void initConverter() {
-        addConverter(Boolean.class, new BooleanCsvDataConverter());
-        addConverter(Date.class, new DateCsvDataConverter());
-        addConverter(Integer.class, new IntegerCsvDataConverter());
-        addConverter(Long.class, new LongCsvDataConverter());
-        addConverter(String.class, new StringCsvDataConverter());
-        addConverter(Double.class, new DoubleCsvDataConverter());
     }
 
     @Override
@@ -159,10 +153,19 @@ public abstract class AbstractCsvTemplate implements CsvTemplate {
      * @param converter 转换器
      * @return 如果有旧的converter，则返回旧的CsvDataConverter
      */
-    private CsvDataConverter addConverter(Type type, CsvDataConverter converter) {
+    @Override
+    public CsvDataConverter addConverter(Type type, CsvDataConverter converter) {
         CsvDataConverter<Object> oldDataConverter = converterMap.get(type);
         converterMap.put(type, (CsvDataConverter<Object>) converter);
         return oldDataConverter;
+    }
+
+    @Override
+    public void addAllConverter(Map<Type, CsvDataConverter<Object>> converterMap) {
+        if(converterMap == null || converterMap.isEmpty()) {
+            throw new CsvException("adll allConverter fail, param is null.");
+        }
+        this.converterMap.putAll(converterMap);
     }
 
     @Override

@@ -2,6 +2,8 @@ package cloud.tianai.csv.impl;
 
 import cloud.tianai.csv.Path;
 import cloud.tianai.csv.exception.CsvException;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * @Author: 天爱有情
@@ -12,14 +14,28 @@ public abstract class AbstractLazyRefreshCsvTemplate extends AbstractCsvTemplate
 
     /** 内存存储. */
     private StringBuilder memoryStorage;
+
+    @Setter
+    @Getter
     /** 刷盘阈值. */
-    private Integer threshold;
+    private Integer threshold = 1024;
+
+    @Setter
+    @Getter
+    /** 内存容量. */
+    private  Integer memoryStorageCapacity = 1024;
 
     public AbstractLazyRefreshCsvTemplate(Integer memoryStorageCapacity, Integer threshold) {
         assert  memoryStorageCapacity < 1;
         assert  threshold < 1;
-        this.memoryStorage = new StringBuilder(memoryStorageCapacity);
+        this.memoryStorageCapacity = memoryStorageCapacity;
         this.threshold = threshold;
+    }
+
+    @Override
+    protected void doInit(String fileName) throws CsvException {
+        // 初始化内存存储器
+        this.memoryStorage = new StringBuilder(memoryStorageCapacity);
     }
 
     public AbstractLazyRefreshCsvTemplate() {
@@ -55,7 +71,7 @@ public abstract class AbstractLazyRefreshCsvTemplate extends AbstractCsvTemplate
         }
     }
 
-    protected abstract void refreshStorage(String toString);
+    protected abstract void refreshStorage(String data);
 
     protected abstract Path innerFinish();
 }
