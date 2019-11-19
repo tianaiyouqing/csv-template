@@ -22,6 +22,8 @@ public class CsvTemplateFactory {
         addConverter(new LongCsvDataConverter());
         addConverter(new StringCsvDataConverter());
         addConverter(new DoubleCsvDataConverter());
+        addConverter(new UrlCsvDataConverter());
+        addConverter(new UriCsvDataConverter());
     }
 
     public static CsvDataConverter addConverter(CsvDataConverter converter) {
