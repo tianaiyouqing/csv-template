@@ -62,7 +62,7 @@ public interface CsvTemplate {
      * @param converter
      * @return
      */
-    CsvDataConverter addConverter(Type type, CsvDataConverter converter);
+    CsvDataConverter addConverter(CsvDataConverter converter);
 
     /**
      * 一次性添加多个converter

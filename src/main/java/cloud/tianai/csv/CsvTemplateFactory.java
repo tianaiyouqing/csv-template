@@ -5,9 +5,9 @@ import cloud.tianai.csv.exception.CsvException;
 import cloud.tianai.csv.impl.LocalFileCsvTemplate;
 import cloud.tianai.csv.impl.OssCsvTemplate;
 import cloud.tianai.csv.impl.OssProperties;
+import cloud.tianai.csv.util.ResolvableType;
 
 import java.lang.reflect.Type;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -16,15 +16,21 @@ public class CsvTemplateFactory {
     private static Map<Type, CsvDataConverter<Object>> converterMap = new HashMap<>(255);
 
     static {
-        addConverter(Boolean.class, new BooleanCsvDataConverter());
-        addConverter(Date.class, new DateCsvDataConverter());
-        addConverter(Integer.class, new IntegerCsvDataConverter());
-        addConverter(Long.class, new LongCsvDataConverter());
-        addConverter(String.class, new StringCsvDataConverter());
-        addConverter(Double.class, new DoubleCsvDataConverter());
+        addConverter(new BooleanCsvDataConverter());
+        addConverter(new DateCsvDataConverter());
+        addConverter(new IntegerCsvDataConverter());
+        addConverter(new LongCsvDataConverter());
+        addConverter(new StringCsvDataConverter());
+        addConverter(new DoubleCsvDataConverter());
     }
 
-    public static CsvDataConverter addConverter(Type type, CsvDataConverter converter) {
+    public static CsvDataConverter addConverter(CsvDataConverter converter) {
+        ResolvableType resolvableType = ResolvableType.forClass(converter.getClass()).as(CsvDataConverter.class);
+        ResolvableType[] generics = resolvableType.getGenerics();
+        if (generics.length < 1 || generics[0].resolve() == null) {
+            throw new CsvException("add[CsvDataConverter] fail, match not Type.");
+        }
+        Class<?> type = generics[0].resolve();
         CsvDataConverter<Object> oldDataConverter = converterMap.get(type);
         converterMap.put(type, (CsvDataConverter<Object>) converter);
         return oldDataConverter;
@@ -42,12 +48,5 @@ public class CsvTemplateFactory {
         csvTemplate.addAllConverter(converterMap);
         csvTemplate.init(fileName);
         return csvTemplate;
-    }
-
-    public enum CsvTemplateEnum {
-        /** 默认. */
-        LOCAL,
-        /** oss. */
-        OSS
     }
 }

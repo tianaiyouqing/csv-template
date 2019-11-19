@@ -6,6 +6,7 @@ import cloud.tianai.csv.Path;
 import cloud.tianai.csv.converter.*;
 import cloud.tianai.csv.exception.CsvException;
 import cloud.tianai.csv.util.ClassUtils;
+import cloud.tianai.csv.util.ResolvableType;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -149,12 +150,17 @@ public abstract class AbstractCsvTemplate implements CsvTemplate {
     /**
      * 添加converter转换器
      *
-     * @param type      type类型
      * @param converter 转换器
      * @return 如果有旧的converter，则返回旧的CsvDataConverter
      */
     @Override
-    public CsvDataConverter addConverter(Type type, CsvDataConverter converter) {
+    public CsvDataConverter addConverter(CsvDataConverter converter) {
+        ResolvableType resolvableType = ResolvableType.forClass(converter.getClass()).as(CsvDataConverter.class);
+        ResolvableType[] generics = resolvableType.getGenerics();
+        if(generics.length < 1 || generics[0].resolve() == null) {
+           throw new  CsvException("add[CsvDataConverter] fail, match not Type.");
+        }
+        Class<?> type =  generics[0].resolve();
         CsvDataConverter<Object> oldDataConverter = converterMap.get(type);
         converterMap.put(type, (CsvDataConverter<Object>) converter);
         return oldDataConverter;
