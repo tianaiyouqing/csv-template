@@ -14,10 +14,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * @Author: 天爱有情
+ * @Date: 2019/11/20 20:02
+ * @Description: CSV模板创建工具
+ */
 public class CsvTemplateBuilder {
 
     /** 内置的一些Converter. */
-    private static Map<Type, CsvDataConverter<Object>> converterMap = new HashMap<>(255);
+    private static Map<Type, CsvDataConverter<Object>> converterMap = new HashMap<>(20);
     static {
         addConverter(new BooleanCsvDataConverter());
         addConverter(new DateCsvDataConverter());

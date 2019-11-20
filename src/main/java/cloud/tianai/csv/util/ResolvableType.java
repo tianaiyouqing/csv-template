@@ -38,8 +38,7 @@ public class ResolvableType {
                 return (Class<?>) rawType;
             }
         }
-
-        return null;
+        return Object.class;
     }
 
     public static ResolvableType forClass(Class<?> clazz) {
