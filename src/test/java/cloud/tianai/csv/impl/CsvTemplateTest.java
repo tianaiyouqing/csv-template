@@ -1,8 +1,7 @@
 package cloud.tianai.csv.impl;
 
-
 import cloud.tianai.csv.CsvTemplate;
-import cloud.tianai.csv.CsvTemplateFactory;
+import cloud.tianai.csv.CsvTemplateBuilder;
 import cloud.tianai.csv.Path;
 
 import java.util.ArrayList;
@@ -10,16 +9,36 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public class LocalFileCsvTemplateTest {
+public class CsvTemplateTest {
 
     public static void main(String[] args) {
-        CsvTemplate csvTemplate = CsvTemplateFactory.createCsvTemplate("temp-csv");
-        OssProperties properties = new OssProperties();
-        properties.setEndpoint("oss-cn-beijing.aliyuncs.com");
-        properties.setBucketName("csv-temp");
-        properties.setAccessKeyId("LTAI4FrWXJRB95NHYYLfhS7q");
-        properties.setAccessKeySecret("ZIiHnIIoARXiSLkExFHsyKdwv8vSt8");
-        csvTemplate.init("temp-csv");
+        // 创建本地Template
+        CsvTemplate localCsvTemplate = CsvTemplateBuilder.build()
+                .local()
+                .memoryStorageCapacity(1024)
+                .threshold(1024)
+                .tempFileDirectory("./csv-temp")
+                .builderAndInit("temp.csv");
+
+        // 创建OSS Template
+//        OssProperties properties = new OssProperties();
+//        properties.setEndpoint("oss-cn-beijing.aliyuncs.com");
+//        properties.setBucketName("csv-temp");
+//        properties.setAccessKeyId("xxx");
+//        properties.setAccessKeySecret("xxx");
+//        CsvTemplate ossCsvTemplate = CsvTemplateBuilder.build()
+//                // 指定为OSS类型， 并且设置oss的属性
+//                .oss(properties)
+//                .memoryStorageCapacity(1024)
+//                .threshold(1024)
+//                .tempFileDirectory("./csv-temp")
+//                .builderAndInit("temp.csv");
+
+        execute(localCsvTemplate);
+
+    }
+
+    private static void execute(CsvTemplate csvTemplate) {
         List<Object> title = new ArrayList<>();
 
         title.add("订单ID");
@@ -58,7 +77,7 @@ public class LocalFileCsvTemplateTest {
                     e.printStackTrace();
                 }
                 Long rowNumber = csvTemplate.getRowNumber();
-                System.out.println("已添加 [" + rowNumber +"] 条数据.");
+                System.out.println("已添加 [" + rowNumber + "] 条数据.");
             }
             System.out.println("最终数据: " + csvTemplate.getRowNumber());
         }).start();
@@ -77,17 +96,17 @@ public class LocalFileCsvTemplateTest {
             data.add(i % 2 == 0);
             data.add(i % 2 != 0);
             data.add("订单类型" + i);
-            data.add("订单类型"+ i);
+            data.add("订单类型" + i);
             data.add(1.25 + i);
             data.add(6.66 + i);
             data.add("买家名称" + i);
-            data.add("买家电话"  + i);
-            data.add("买家留言"  + i);
-            data.add("省"  + i);
-            data.add("市"  + i);
-            data.add("区"  + i);
-            data.add("街道"  + i);
-            data.add("地址详情"  + i);
+            data.add("买家电话" + i);
+            data.add("买家留言" + i);
+            data.add("省" + i);
+            data.add("市" + i);
+            data.add("区" + i);
+            data.add("街道" + i);
+            data.add("地址详情" + i);
             data.add(new Date());
             data.add(new Date());
             data.add(new Date());
@@ -98,5 +117,6 @@ public class LocalFileCsvTemplateTest {
         Path path = csvTemplate.finish();
         System.out.println(path);
     }
+
 
 }
