@@ -29,6 +29,12 @@ public abstract class AbstractCsvTemplate implements CsvTemplate {
     @Setter
     private Path path;
 
+    /** 表头的数据. */
+    private List<Object> titleData;
+
+    /** 表头的字符串. */
+    private String titleStr;
+
     /**
      * 当前已经添加的行数，默认为0
      */
@@ -37,7 +43,7 @@ public abstract class AbstractCsvTemplate implements CsvTemplate {
     /**
      * 如果执行了初始化方法，则设置为true， 模式是false
      */
-    private Boolean init = false;
+    protected Boolean init = false;
 
     /**
      * 数据转换器
@@ -64,7 +70,7 @@ public abstract class AbstractCsvTemplate implements CsvTemplate {
     @Getter
     private final Object lockKey = new Object();
 
-    private Boolean finished = false;
+    protected Boolean finished = false;
 
     @Override
     public void init(String fileName) throws CsvException {
@@ -94,10 +100,22 @@ public abstract class AbstractCsvTemplate implements CsvTemplate {
             if (finished) {
                 throw new CsvException("append data fail, this csv is finished, can not append");
             }
+            if(isTitle()) {
+                setTitle(datas, joinStr);
+            }
             doAppend(joinStr);
         }
         // 记录总数
         addRowNumber(1L);
+    }
+
+    protected void setTitle(List<Object> data, String dataStr) {
+        this.titleData = new ArrayList<>(data);
+        this.titleStr = dataStr;
+    }
+
+    protected boolean isTitle() {
+        return getRowNumber().equals(0L) && Objects.isNull(titleData);
     }
 
     protected String getLine(List<String> converterData) {
@@ -219,6 +237,16 @@ public abstract class AbstractCsvTemplate implements CsvTemplate {
     @Override
     public Boolean isFinish() {
         return finished;
+    }
+
+    @Override
+    public List<Object> getTitleData() {
+        return titleData;
+    }
+
+    @Override
+    public String getTitleStr() {
+        return titleStr;
     }
 
     /**

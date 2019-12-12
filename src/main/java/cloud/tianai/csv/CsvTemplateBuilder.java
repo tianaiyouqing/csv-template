@@ -3,6 +3,7 @@ package cloud.tianai.csv;
 import cloud.tianai.csv.converter.*;
 import cloud.tianai.csv.exception.CsvException;
 import cloud.tianai.csv.impl.LocalFileCsvTemplate;
+import cloud.tianai.csv.impl.LocalFileMultipleCsvTemplate;
 import cloud.tianai.csv.impl.OssCsvTemplate;
 import cloud.tianai.csv.impl.OssProperties;
 import cloud.tianai.csv.util.ResolvableType;
@@ -50,6 +51,8 @@ public class CsvTemplateBuilder {
     /** 创建oss类型的数据需要的配置属性. */
     private OssProperties ossProperties;
 
+    private Boolean multpart = true;
+
     public static CsvDataConverter addConverter(CsvDataConverter converter) {
         ResolvableType resolvableType = ResolvableType.forClass(converter.getClass()).as(CsvDataConverter.class);
         ResolvableType[] generics = resolvableType.getGenerics();
@@ -96,8 +99,11 @@ public class CsvTemplateBuilder {
         this.ossProperties = ossProperties;
         return this;
     }
-
     public CsvTemplateBuilder local() {
+        return local(true);
+    }
+    public CsvTemplateBuilder local(boolean multpart) {
+        this.multpart = multpart;
         return type(TemplateType.LOCAL);
     }
     public CsvTemplate builder() {
@@ -130,7 +136,12 @@ public class CsvTemplateBuilder {
     }
 
     private CsvTemplate createLocalTemplate() {
-        CsvTemplate csvTemplate = new LocalFileCsvTemplate(tempFileDirectory, memoryStorageCapacity, threshold);
+        CsvTemplate csvTemplate;
+        if(multpart) {
+            csvTemplate = new LocalFileMultipleCsvTemplate(tempFileDirectory, memoryStorageCapacity, threshold);
+        }else {
+            csvTemplate = new LocalFileCsvTemplate(tempFileDirectory, memoryStorageCapacity, threshold);
+        }
         warpCsvTemplate(csvTemplate);
         return csvTemplate;
     }

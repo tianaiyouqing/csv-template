@@ -70,4 +70,16 @@ public interface CsvTemplate {
      * @param converterMap
      */
     void addAllConverter(Map<Type, CsvDataConverter<Object>> converterMap);
+
+    /**
+     * 获取表头数据
+     * @return
+     */
+    List<Object> getTitleData();
+
+    /**
+     * 获取表头转换后的str
+     * @return
+     */
+    String getTitleStr();
 }

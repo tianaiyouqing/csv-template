@@ -3,21 +3,24 @@ package cloud.tianai.csv.impl;
 import cloud.tianai.csv.CsvTemplate;
 import cloud.tianai.csv.CsvTemplateBuilder;
 import cloud.tianai.csv.Path;
+import cloud.tianai.csv.converter.*;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class CsvTemplateTest {
+    private static CountDownLatch countDownLatch = new CountDownLatch(1);
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         // 创建本地Template
         CsvTemplate localCsvTemplate = CsvTemplateBuilder.build()
                 .local()
                 .memoryStorageCapacity(1024)
                 .threshold(1024)
-                .tempFileDirectory("./csv-temp")
+                .tempFileDirectory("./temp")
                 .builderAndInit("temp.csv");
 
         // 创建OSS Template
@@ -33,9 +36,20 @@ public class CsvTemplateTest {
 //                .threshold(1024)
 //                .tempFileDirectory("./csv-temp")
 //                .builderAndInit("temp.csv");
-
+//        LocalFileMultipleCsvTemplate localCsvTemplate = new LocalFileMultipleCsvTemplate("./temp", 1024, 1024);
+//        localCsvTemplate.init("temp.csv");
+//        localCsvTemplate.setFileMaxLines(50000);
+//        localCsvTemplate.addConverter(new BooleanCsvDataConverter());
+//        localCsvTemplate.addConverter(new DateCsvDataConverter());
+//        localCsvTemplate.addConverter(new IntegerCsvDataConverter());
+//        localCsvTemplate.addConverter(new LongCsvDataConverter());
+//        localCsvTemplate.addConverter(new StringCsvDataConverter());
+//        localCsvTemplate.addConverter(new DoubleCsvDataConverter());
+//        localCsvTemplate.addConverter(new UrlCsvDataConverter());
+//        localCsvTemplate.addConverter(new UriCsvDataConverter());
         execute(localCsvTemplate);
-
+        System.out.println("await---");
+        countDownLatch.await();
     }
 
     private static void execute(CsvTemplate csvTemplate) {
@@ -80,6 +94,7 @@ public class CsvTemplateTest {
                 System.out.println("已添加 [" + rowNumber + "] 条数据.");
             }
             System.out.println("最终数据: " + csvTemplate.getRowNumber());
+            countDownLatch.countDown();
         }).start();
 
         for (int i = 0; i < 10000000; i++) {
@@ -113,8 +128,10 @@ public class CsvTemplateTest {
             data.add(System.currentTimeMillis());
             csvTemplate.append(data);
         }
-
+        long begin = System.currentTimeMillis();
         Path path = csvTemplate.finish();
+        long end = System.currentTimeMillis();
+        System.out.println("finish耗时:" + (end - begin) +"毫秒");
         System.out.println(path);
     }
 

@@ -4,15 +4,21 @@ import cloud.tianai.csv.Path;
 import cloud.tianai.csv.exception.CsvException;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.Objects;
 
 /**
  * @Author: 天爱有情
  * @Date: 2019/11/15 17:39
  * @Description: 异步刷新CSV模板， 等数据达到阈值后再进行刷盘操作，可以利用内存提升性能
  */
+@Slf4j
 public abstract class AbstractLazyRefreshCsvTemplate extends AbstractCsvTemplate {
 
     /** 内存存储. */
+    @Setter
+    @Getter
     private StringBuilder memoryStorage;
 
     @Setter
@@ -35,9 +41,11 @@ public abstract class AbstractLazyRefreshCsvTemplate extends AbstractCsvTemplate
     @Override
     protected void doInit(String fileName) throws CsvException {
         // 初始化内存存储器
-        this.memoryStorage = new StringBuilder(memoryStorageCapacity);
+        if(Objects.isNull(memoryStorage)) {
+            this.memoryStorage = new StringBuilder(memoryStorageCapacity);
+            log.debug("memoryStorage init , capacity is " + memoryStorage);
+        }
     }
-
     public AbstractLazyRefreshCsvTemplate() {
         this(1024, 1024);
     }
@@ -59,7 +67,7 @@ public abstract class AbstractLazyRefreshCsvTemplate extends AbstractCsvTemplate
         // 加入内存数据库
         memoryStorage.append(joinStr);
         // 检查是否可以刷盘
-        if(memoryStorage.length() >= threshold) {
+        if(needPersistence()) {
             try {
                 refreshStorage(memoryStorage.toString());
                 // 刷盘完成后清空
@@ -69,6 +77,14 @@ public abstract class AbstractLazyRefreshCsvTemplate extends AbstractCsvTemplate
                 e.printStackTrace();
             }
         }
+    }
+
+    /**
+     * 判断是否需要刷盘持久化
+     * @return
+     */
+    protected boolean needPersistence() {
+        return memoryStorage.length() >= threshold;
     }
 
     protected abstract void refreshStorage(String data);
