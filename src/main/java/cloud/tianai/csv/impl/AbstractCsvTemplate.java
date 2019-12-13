@@ -22,6 +22,19 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @Slf4j
 public abstract class AbstractCsvTemplate implements CsvTemplate {
+    /**
+     * 数据转换器
+     */
+    @Setter
+    @Getter
+    private Map<Type, CsvDataConverter<Object>> converterMap = new HashMap<>(255);
+
+    /**
+     * 默认的数据转换器
+     */
+    @Setter
+    @Getter
+    private CsvDataConverter<Object> defaultCstDataConverter = new DefaultCsvConverter();
 
     /**
      * 当前的path路径.
@@ -45,20 +58,6 @@ public abstract class AbstractCsvTemplate implements CsvTemplate {
      */
     protected Boolean init = false;
 
-    /**
-     * 数据转换器
-     */
-    @Setter
-    @Getter
-    private Map<Type, CsvDataConverter<Object>> converterMap = new HashMap<>(255);
-
-    /**
-     * 默认的数据转换器
-     */
-    @Setter
-    @Getter
-    private CsvDataConverter<Object> defaultCstDataConverter = new DefaultCsvConverter();
-
     @Setter
     @Getter
     private String csvSplitIdent = ",";
@@ -72,11 +71,31 @@ public abstract class AbstractCsvTemplate implements CsvTemplate {
 
     protected Boolean finished = false;
 
+    /** 默认的csv文件后缀名. */
+    private static final String DEFAULT_CSV_FILE_SUFFIX = ".csv";
+
+    @Setter
+    @Getter
+    /** 指定csv文件的后缀名. */
+    private String csvFileSuffix = DEFAULT_CSV_FILE_SUFFIX;
+
+    private String fileName;
+
     @Override
-    public void init(String fileName) throws CsvException {
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    @Override
+    public String getFileName() {
+        return fileName;
+    }
+
+    @Override
+    public void init() {
         // 标记状态为一已执行初始化方法
         this.init = true;
-        doInit(fileName);
+        doInit();
     }
 
     @Override
@@ -261,7 +280,7 @@ public abstract class AbstractCsvTemplate implements CsvTemplate {
 
     protected abstract Path doFinish() throws CsvException;
 
-    protected abstract void doInit(String fileName) throws CsvException;
+    protected abstract void doInit() throws CsvException;
 
     protected abstract void doAppend(String joinStr) throws CsvException;
 }

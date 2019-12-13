@@ -16,7 +16,9 @@ import java.util.Objects;
 @Slf4j
 public abstract class AbstractLazyRefreshCsvTemplate extends AbstractCsvTemplate {
 
-    /** 内存存储. */
+    /**
+     * 内存存储.
+     */
     @Setter
     @Getter
     private StringBuilder memoryStorage;
@@ -29,23 +31,24 @@ public abstract class AbstractLazyRefreshCsvTemplate extends AbstractCsvTemplate
     @Setter
     @Getter
     /** 内存容量. */
-    private  Integer memoryStorageCapacity = 1024;
+    private Integer memoryStorageCapacity = 1024;
 
     public AbstractLazyRefreshCsvTemplate(Integer memoryStorageCapacity, Integer threshold) {
-        assert  memoryStorageCapacity < 1;
-        assert  threshold < 1;
+        assert memoryStorageCapacity < 1;
+        assert threshold < 1;
         this.memoryStorageCapacity = memoryStorageCapacity;
         this.threshold = threshold;
     }
 
     @Override
-    protected void doInit(String fileName) throws CsvException {
+    protected void doInit() throws CsvException {
         // 初始化内存存储器
-        if(Objects.isNull(memoryStorage)) {
+        if (Objects.isNull(memoryStorage)) {
             this.memoryStorage = new StringBuilder(memoryStorageCapacity);
             log.debug("memoryStorage init , capacity is " + memoryStorage);
         }
     }
+
     public AbstractLazyRefreshCsvTemplate() {
         this(1024, 1024);
     }
@@ -53,12 +56,11 @@ public abstract class AbstractLazyRefreshCsvTemplate extends AbstractCsvTemplate
     @Override
     protected Path doFinish() throws CsvException {
         // finish执行时，把剩下的数据刷盘后返回
-        if(memoryStorage.length() > 0) {
+        if (memoryStorage.length() > 0) {
             // 最后刷盘
             refreshStorage(memoryStorage.toString());
             memoryStorage.delete(0, memoryStorage.length());
         }
-
         return innerFinish();
     }
 
@@ -67,7 +69,7 @@ public abstract class AbstractLazyRefreshCsvTemplate extends AbstractCsvTemplate
         // 加入内存数据库
         memoryStorage.append(joinStr);
         // 检查是否可以刷盘
-        if(needPersistence()) {
+        if (needPersistence()) {
             try {
                 refreshStorage(memoryStorage.toString());
                 // 刷盘完成后清空
@@ -81,6 +83,7 @@ public abstract class AbstractLazyRefreshCsvTemplate extends AbstractCsvTemplate
 
     /**
      * 判断是否需要刷盘持久化
+     *
      * @return
      */
     protected boolean needPersistence() {

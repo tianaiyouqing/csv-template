@@ -2,6 +2,7 @@ package cloud.tianai.csv;
 
 import cloud.tianai.csv.exception.CsvException;
 
+import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
@@ -14,12 +15,15 @@ import java.util.Map;
 public interface CsvTemplate {
 
     /**
-     * 通过传入的文件名进行初始化
-     *
-     * @param fileName 文件名称
+     * 初始化
      */
-    void init(String fileName);
+    void init();
 
+    /** 设置文件名称. */
+    void setFileName(String fileName);
+
+    /** 获取文件名称. */
+    String getFileName();
     /**
      * 获取路径
      *
@@ -82,4 +86,10 @@ public interface CsvTemplate {
      * @return
      */
     String getTitleStr();
+
+    /**
+     * 获取输出流， 必须是在执行了finish方法之后才能获取文件流
+     * @return InputStream
+     */
+    InputStream getInputStream();
 }

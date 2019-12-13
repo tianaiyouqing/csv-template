@@ -2,24 +2,24 @@ package cloud.tianai.csv.impl;
 
 import cloud.tianai.csv.Path;
 import cloud.tianai.csv.exception.CsvException;
+import cloud.tianai.csv.util.PathUtils;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
 import com.aliyun.oss.OSSException;
 import com.aliyun.oss.model.AppendObjectRequest;
 import com.aliyun.oss.model.AppendObjectResult;
+import com.aliyun.oss.model.OSSObject;
 import com.aliyun.oss.model.ObjectMetadata;
-import lombok.Builder;
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.Objects;
 
 /**
  * @Author: 天爱有情
@@ -35,7 +35,7 @@ public class OssCsvTemplate extends AbstractLazyRefreshCsvTemplate {
     private String bucketName;
     private Date expiration;
 
-    // 内部使用的属性
+    /** 内部使用的属性. */
     private OSS ossClient;
     private Long position = 0L;
     private Integer index = -1;
@@ -69,7 +69,7 @@ public class OssCsvTemplate extends AbstractLazyRefreshCsvTemplate {
 
     @Override
     protected Path innerFinish() {
-        if(ossClient != null) {
+        if (ossClient != null) {
             ossClient.shutdown();
         }
 
@@ -77,8 +77,12 @@ public class OssCsvTemplate extends AbstractLazyRefreshCsvTemplate {
     }
 
     @Override
-    protected void doInit(String fileName) throws CsvException {
-        super.doInit(fileName);
+    protected void doInit() throws CsvException {
+        super.doInit();
+        String fileName = getFileName();
+        if(Objects.isNull(fileName)) {
+            throw new CsvException("init fail please set FileName");
+        }
         ossClient = new OSSClientBuilder().build(endpoint, accessKeyId, accessKeySecret);
         initFile(ossClient, fileName);
     }
@@ -99,13 +103,9 @@ public class OssCsvTemplate extends AbstractLazyRefreshCsvTemplate {
             if ("PositionNotEqualToLength".equals(e.getErrorCode())) {
                 //说明有脏数据，重新生成key
                 log.info("oss上传csvkey值重复, 更换key值");
-                String endwith = "";
-                if(fileName.endsWith(".csv")) {
-                    endwith = ".csv";
-                    fileName = fileName.substring(0, fileName.lastIndexOf(".csv"));
-                }
+                fileName = PathUtils.subSuffix(fileName, getCsvFileSuffix());
                 // 如果key重复， 则生成新的key值
-                initFile(ossClient, fileName + "-" + (++index) + endwith);
+                initFile(ossClient, fileName + "-" + (++index) + getCsvFileSuffix());
             } else {
                 throw e;
             }
@@ -120,12 +120,20 @@ public class OssCsvTemplate extends AbstractLazyRefreshCsvTemplate {
         LocalDateTime now = LocalDateTime.now();
         // 临时目录中加入时间区分
         String format = DateTimeFormatter.ofPattern("yyyy/MM/dd/").format(now);
-        if(fileName.startsWith("/")) {
-            fileName = fileName.substring(1);
+        String filePath = PathUtils.getFilePath(format, PathUtils.subSuffix(fileName, getCsvFileSuffix()), "", getCsvFileSuffix());
+        return filePath;
+    }
+
+    @Override
+    public InputStream getInputStream() {
+        if(!isFinish()) {
+            throw new CsvException("read inputStream fail, must be exec finish() method.");
         }
-        if(!fileName.endsWith(".csv")) {
-            fileName += ".csv";
+        OSSObject object = ossClient.getObject(bucketName, fileKey);
+        if(Objects.isNull(object)) {
+            throw new CsvException("未读取到oss文件， bucketName = " + bucketName +", fileKey=" + fileKey);
         }
-        return format + fileName;
+        InputStream objectContent = object.getObjectContent();
+        return objectContent;
     }
 }

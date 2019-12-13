@@ -5,6 +5,7 @@ import cloud.tianai.csv.CsvTemplateBuilder;
 import cloud.tianai.csv.Path;
 import cloud.tianai.csv.converter.*;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -18,10 +19,16 @@ public class CsvTemplateTest {
         // 创建本地Template
         CsvTemplate localCsvTemplate = CsvTemplateBuilder.build()
                 .local()
-                .memoryStorageCapacity(1024)
-                .threshold(1024)
+                .memoryStorageCapacity(2048)
+                .threshold(2048)
                 .tempFileDirectory("./temp")
-                .builderAndInit("temp.csv");
+                .fileName("temp.csv")
+                .builderAndInit();
+
+        // 创建内存版的Template
+//        CsvTemplate localCsvTemplate = CsvTemplateBuilder.build()
+//                .memory()
+//                .builderAndInit();
 
         // 创建OSS Template
 //        OssProperties properties = new OssProperties();
@@ -97,7 +104,7 @@ public class CsvTemplateTest {
             countDownLatch.countDown();
         }).start();
 
-        for (int i = 0; i < 10000000; i++) {
+        for (int i = 0; i < 10000; i++) {
             List<Object> data = new ArrayList<>();
 
             data.add(1000000 + i);
@@ -132,7 +139,9 @@ public class CsvTemplateTest {
         Path path = csvTemplate.finish();
         long end = System.currentTimeMillis();
         System.out.println("finish耗时:" + (end - begin) +"毫秒");
+        InputStream inputStream = csvTemplate.getInputStream();
         System.out.println(path);
+        System.out.println(inputStream);
     }
 
 

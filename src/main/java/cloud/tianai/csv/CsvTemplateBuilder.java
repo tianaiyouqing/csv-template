@@ -2,10 +2,7 @@ package cloud.tianai.csv;
 
 import cloud.tianai.csv.converter.*;
 import cloud.tianai.csv.exception.CsvException;
-import cloud.tianai.csv.impl.LocalFileCsvTemplate;
-import cloud.tianai.csv.impl.LocalFileMultipleCsvTemplate;
-import cloud.tianai.csv.impl.OssCsvTemplate;
-import cloud.tianai.csv.impl.OssProperties;
+import cloud.tianai.csv.impl.*;
 import cloud.tianai.csv.util.ResolvableType;
 import lombok.Getter;
 
@@ -22,8 +19,11 @@ import java.util.Map;
  */
 public class CsvTemplateBuilder {
 
-    /** 内置的一些Converter. */
+    /**
+     * 内置的一些Converter.
+     */
     private static Map<Type, CsvDataConverter<Object>> converterMap = new HashMap<>(20);
+
     static {
         addConverter(new BooleanCsvDataConverter());
         addConverter(new DateCsvDataConverter());
@@ -34,24 +34,38 @@ public class CsvTemplateBuilder {
         addConverter(new UrlCsvDataConverter());
         addConverter(new UriCsvDataConverter());
     }
-    /** 自定义的Converter. */
+
+    /**
+     * 自定义的Converter.
+     */
     private List<CsvDataConverter> customCsvDataConverters = new ArrayList<>(20);
 
-    /** 默认是本地类型的. */
+    /**
+     * 默认是本地类型的.
+     */
     private TemplateType type = TemplateType.LOCAL;
 
-    /** 临时文件地址. */
+    /**
+     * 临时文件地址.
+     */
     private String tempFileDirectory = "./temp";
 
-    /** 默认内存容量. */
+    /**
+     * 默认内存容量.
+     */
     private Integer memoryStorageCapacity = 1024;
 
-    /** 阈值. */
+    /**
+     * 阈值.
+     */
     private Integer threshold = 1024;
-    /** 创建oss类型的数据需要的配置属性. */
+    /**
+     * 创建oss类型的数据需要的配置属性.
+     */
     private OssProperties ossProperties;
 
     private Boolean multpart = true;
+    private String fileName;
 
     public static CsvDataConverter addConverter(CsvDataConverter converter) {
         ResolvableType resolvableType = ResolvableType.forClass(converter.getClass()).as(CsvDataConverter.class);
@@ -84,6 +98,7 @@ public class CsvTemplateBuilder {
         this.memoryStorageCapacity = memoryStorageCapacity;
         return this;
     }
+
     public CsvTemplateBuilder threshold(Integer threshold) {
         this.threshold = threshold;
         return this;
@@ -99,49 +114,69 @@ public class CsvTemplateBuilder {
         this.ossProperties = ossProperties;
         return this;
     }
+
     public CsvTemplateBuilder local() {
         return local(true);
+    }
+
+    public CsvTemplateBuilder memory() {
+        type(TemplateType.MEMORY);
+        return this;
     }
     public CsvTemplateBuilder local(boolean multpart) {
         this.multpart = multpart;
         return type(TemplateType.LOCAL);
     }
+
     public CsvTemplate builder() {
         switch (type) {
             case OSS:
                 return createOssTemplate();
             case LOCAL:
                 return createLocalTemplate();
+            case MEMORY:
+                return createMemoryTemplate();
             default:
                 return createLocalTemplate();
         }
     }
 
-    public CsvTemplate init(CsvTemplate csvTemplate, String fileName) {
-        csvTemplate.init(fileName);
+    private CsvTemplate createMemoryTemplate() {
+        return new MemoryOssCsvTemplate();
+    }
+
+    public CsvTemplate init(CsvTemplate csvTemplate) {
+        csvTemplate.init();
         return csvTemplate;
     }
 
-    public CsvTemplate builderAndInit(String fileName) {
+    public CsvTemplateBuilder fileName(String fileName) {
+        this.fileName = fileName;
+        return this;
+    }
+
+    public CsvTemplate builderAndInit() {
         CsvTemplate csvTemplate = builder();
-        init(csvTemplate, fileName);
+        init(csvTemplate);
         return csvTemplate;
     }
 
     private CsvTemplate createOssTemplate() {
         assert ossProperties != null;
         CsvTemplate csvTemplate = new OssCsvTemplate(memoryStorageCapacity, threshold, ossProperties);
+        csvTemplate.setFileName(fileName);
         warpCsvTemplate(csvTemplate);
         return csvTemplate;
     }
 
     private CsvTemplate createLocalTemplate() {
         CsvTemplate csvTemplate;
-        if(multpart) {
+        if (multpart) {
             csvTemplate = new LocalFileMultipleCsvTemplate(tempFileDirectory, memoryStorageCapacity, threshold);
-        }else {
+        } else {
             csvTemplate = new LocalFileCsvTemplate(tempFileDirectory, memoryStorageCapacity, threshold);
         }
+        csvTemplate.setFileName(fileName);
         warpCsvTemplate(csvTemplate);
         return csvTemplate;
     }
@@ -155,11 +190,19 @@ public class CsvTemplateBuilder {
     }
 
     @Getter
-    static enum TemplateType {
-        /** OSS类型. */
+    enum TemplateType {
+        /**
+         * OSS类型.
+         */
         OSS,
-        /** 本地. */
-        LOCAL
+        /**
+         * 本地.
+         */
+        LOCAL,
+        /**
+         * 内存版
+         */
+        MEMORY
     }
 
 }

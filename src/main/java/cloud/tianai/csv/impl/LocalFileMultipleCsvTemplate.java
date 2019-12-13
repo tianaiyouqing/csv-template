@@ -2,19 +2,21 @@ package cloud.tianai.csv.impl;
 
 import cloud.tianai.csv.Path;
 import cloud.tianai.csv.exception.CsvException;
+import cloud.tianai.csv.util.FileUtils;
+import cloud.tianai.csv.util.PathUtils;
+import cloud.tianai.csv.util.ZipUtils;
 
 import java.io.*;
 import java.net.MalformedURLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
+import java.util.stream.Collectors;
 
 public class LocalFileMultipleCsvTemplate extends AbstractMultipleCsvTemplate {
 
-    private File zipFile;
-    private String zipFileName;
+    private File compressFile;
+    private String compressFileName;
     private String tempFileDirectory;
 
     public LocalFileMultipleCsvTemplate(String tempFileDirectory, Integer memoryStorageCapacity, Integer threshold) {
@@ -30,11 +32,12 @@ public class LocalFileMultipleCsvTemplate extends AbstractMultipleCsvTemplate {
 
     @Override
     protected AbstractLazyRefreshCsvTemplate createNewCsvTemplate(String fileName) {
-        String warpFileName = warpFileName(zipFileName);
+        String warpFileName = warpFileName(compressFileName);
         LocalFileCsvTemplate localFileCsvTemplate = new LocalFileCsvTemplate();
         // 共用同一个内存数据
         localFileCsvTemplate.setMemoryStorage(super.getMemoryStorage());
-        localFileCsvTemplate.init(warpFileName);
+        localFileCsvTemplate.setFileName(warpFileName);
+        localFileCsvTemplate.init();
         // 添加转换器
         localFileCsvTemplate.setConverterMap(getConverterMap());
         return localFileCsvTemplate;
@@ -42,106 +45,64 @@ public class LocalFileMultipleCsvTemplate extends AbstractMultipleCsvTemplate {
 
     private String warpFileName(String fileName) {
         int fileNums = getCsvTemplateList().size();
-        fileName = subSuffix(fileName, ".csv");
-        return fileName + "-" + ((++fileNums) + ".csv");
-    }
-
-    private String subSuffix(String fileName, String suffix) {
-        if (fileName.endsWith(suffix)) {
-            fileName = fileName.substring(0, fileName.lastIndexOf(suffix));
-        }
-        return fileName;
+        fileName = PathUtils.subSuffix(fileName, getCsvFileSuffix());
+        return fileName + "-" + ((++fileNums) + getCsvFileSuffix());
     }
 
     @Override
     protected Path initMultiplePath() {
-        String fileName = subSuffix(getFileName(), ".csv");
+        String fileName =  PathUtils.subSuffix(getFileName(), getCsvFileSuffix());
         String fileDirectory = getTemplateFileDirectory();
-        String filePath = getFilePath(fileDirectory, fileName, "");
+        String filePath = PathUtils.getFilePath(fileDirectory, fileName, "", getCompressSuffix());
         File file = new File(filePath);
         if (file.exists()) {
             for (int index = 0; file.exists(); index++) {
-                filePath = getFilePath(fileDirectory, fileName, "-" + index);
+                filePath = PathUtils.getFilePath(fileDirectory, fileName, "-" + index, getCompressSuffix());
                 file = new File(filePath);
             }
         }
         // 创建空文件
         try {
-            file.getParentFile().mkdirs();
-            file.createNewFile();
+            FileUtils.createEmptyFile(file);
         } catch (IOException e) {
-            e.printStackTrace();
             throw new CsvException(e);
         }
-        zipFile = file;
-        zipFileName = subSuffix(zipFile.getName(), ".zip");
+        compressFile = file;
+        compressFileName = PathUtils.subSuffix(compressFile.getName(), getCompressSuffix());
         try {
-            return new Path(zipFile.getPath(), zipFile.toURI().toURL(), true);
+            return new Path(compressFile.getPath(), compressFile.toURI().toURL(), true);
         } catch (MalformedURLException e) {
-            e.printStackTrace();
             throw new CsvException(e);
         }
     }
 
+    private String getCompressSuffix() {
+        return ZipUtils.ZIP_FILE_SUFFIX;
+    }
+
     @Override
     protected Path mergeFile(List<Path> filePaths) {
-        FileOutputStream fileOutputStream = null;
-        ZipOutputStream zipOutputStream = null;
-        try {
-            fileOutputStream = new FileOutputStream(zipFile);
-            zipOutputStream = new ZipOutputStream(fileOutputStream);
-            ZipEntry zipEntry;
-            FileInputStream fis = null;
-            for (Path filePath : filePaths) {
-                File file = new File(filePath.getPath());
-                if (file.exists()) {
-                    try {
-                        zipEntry = new ZipEntry(file.getName());
-                        zipOutputStream.putNextEntry(zipEntry);
-                        int len = 0;
-                        //缓冲
-                        byte[] buffer = new byte[1024];
-                        fis = new FileInputStream(file);
-                        while ((len = fis.read(buffer)) > 0) {
-                            zipOutputStream.write(buffer, 0, len);
-                            zipOutputStream.flush();
-                        }
-                    } finally {
-                        //关闭FileInputStream
-                        if (fis != null) {
-                            fis.close();
-                        }
-                    }
-                }
-            }
-            return getPath();
-        } catch (Exception e) {
-            throw new CsvException(e);
-        } finally {
-            try {
-                if (zipOutputStream != null) {
-                    zipOutputStream.closeEntry();
-                    zipOutputStream.close();
-                }
-                if (fileOutputStream != null) {
-                    fileOutputStream.close();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+        // 转换为 File
+        List<File> fileList = filePaths.stream().map(p -> new File(p.getPath())).collect(Collectors.toList());
+        // 多文件压缩
+        ZipUtils.compress(compressFile, fileList);
+        return getPath();
     }
 
     private String getTemplateFileDirectory() {
         return this.tempFileDirectory;
     }
 
-    private String getFilePath(String fileDirectory, String fileName, String salt) {
-        if (fileName.startsWith("/")) {
-            fileName = fileName.substring(fileName.indexOf("/"));
+    @Override
+    public InputStream getInputStream() {
+        if(!isFinish()) {
+            throw new CsvException("read inputStream fail, must be exec finish() method.");
         }
-        // 加后缀
-        fileName += salt + ".zip";
-        return fileDirectory + fileName;
+        try {
+            return new FileInputStream(compressFile);
+        } catch (FileNotFoundException e) {
+            // 文件不存在
+            throw new CsvException(e);
+        }
     }
 }

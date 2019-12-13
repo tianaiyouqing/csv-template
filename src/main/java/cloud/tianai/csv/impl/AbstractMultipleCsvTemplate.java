@@ -10,7 +10,9 @@ import java.util.List;
 
 public abstract class AbstractMultipleCsvTemplate extends AbstractLazyRefreshCsvTemplate {
 
-    /** 默认文件最大行数为10W条. */
+    /**
+     * 默认文件最大行数为10W条.
+     */
     private static Integer DEFAULT_FILE_MAX_LINES = 100000;
 
     @Setter
@@ -25,9 +27,6 @@ public abstract class AbstractMultipleCsvTemplate extends AbstractLazyRefreshCsv
 
     private AbstractLazyRefreshCsvTemplate currentCsvTemplate;
 
-    @Getter
-    private String fileName;
-
     public AbstractMultipleCsvTemplate(Integer memoryStorageCapacity, Integer threshold) {
         super(memoryStorageCapacity, threshold);
     }
@@ -36,11 +35,10 @@ public abstract class AbstractMultipleCsvTemplate extends AbstractLazyRefreshCsv
     }
 
     @Override
-    protected void doInit(String fileName) throws CsvException {
-        super.doInit(fileName);
-        this.fileName = fileName;
+    protected void doInit() throws CsvException {
+        super.doInit();
         setPath(initMultiplePath());
-        AbstractLazyRefreshCsvTemplate csvTemplate = createNewCsvTemplate(fileName);
+        AbstractLazyRefreshCsvTemplate csvTemplate = createNewCsvTemplate(getFileName());
         csvTemplateList.add(csvTemplate);
         currentCsvTemplate = csvTemplate;
     }
@@ -55,12 +53,12 @@ public abstract class AbstractMultipleCsvTemplate extends AbstractLazyRefreshCsv
         if (!init || finished) {
             throw new CsvException("append data fail， please exec init() method or this csv is finished.");
         }
-        if(currentCsvTemplate.getRowNumber() >= fileMaxLines) {
+        if (currentCsvTemplate.getRowNumber() >= fileMaxLines) {
             // 单文件已满，刷盘
             fileFinish();
             // 创建新的csvTemplate
             setTitle(currentCsvTemplate.getTitleData(), currentCsvTemplate.getTitleStr());
-            currentCsvTemplate = createNewCsvTemplate(fileName);
+            currentCsvTemplate = createNewCsvTemplate(getFileName());
             csvTemplateList.add(currentCsvTemplate);
             // 添加表头
             currentCsvTemplate.append(getTitleData());
@@ -69,6 +67,7 @@ public abstract class AbstractMultipleCsvTemplate extends AbstractLazyRefreshCsv
         // 记录行数
         addRowNumber(1L);
     }
+
     @Override
     protected Path innerFinish() {
         if (!currentCsvTemplate.isFinish()) {
@@ -85,6 +84,8 @@ public abstract class AbstractMultipleCsvTemplate extends AbstractLazyRefreshCsv
     }
 
     protected abstract AbstractLazyRefreshCsvTemplate createNewCsvTemplate(String fileName);
+
     protected abstract Path initMultiplePath();
+
     protected abstract Path mergeFile(List<Path> filePaths);
 }
