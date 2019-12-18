@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 public abstract class AbstractMultipleCsvTemplate extends AbstractLazyRefreshCsvTemplate {
@@ -20,11 +21,20 @@ public abstract class AbstractMultipleCsvTemplate extends AbstractLazyRefreshCsv
     /** 单个文件最大行数. */
     private Integer fileMaxLines = DEFAULT_FILE_MAX_LINES;
 
+    /**
+     * 执行过包括正在执行的csv模板
+     */
     @Getter
-    private List<AbstractLazyRefreshCsvTemplate> csvTemplateList = new ArrayList<>(10);
+    private List<AbstractLazyRefreshCsvTemplate> csvTemplateList = new LinkedList<>();
 
-    private List<Path> filePaths = new ArrayList<>(10);
+    /**
+     * 所有生成的文件路径
+     */
+    private List<Path> filePaths = new LinkedList<>();
 
+    /**
+     * 当前正在执行的模板
+     */
     private AbstractLazyRefreshCsvTemplate currentCsvTemplate;
 
     public AbstractMultipleCsvTemplate(Integer memoryStorageCapacity, Integer threshold) {
@@ -83,9 +93,23 @@ public abstract class AbstractMultipleCsvTemplate extends AbstractLazyRefreshCsv
         filePaths.add(path);
     }
 
+    /**
+     * 创建一个新的csv模板
+     * @param fileName
+     * @return
+     */
     protected abstract AbstractLazyRefreshCsvTemplate createNewCsvTemplate(String fileName);
 
+    /**
+     * 初始化多文件路径
+     * @return
+     */
     protected abstract Path initMultiplePath();
 
+    /**
+     * 合并文件， （压缩文件为一个路径）
+     * @param filePaths
+     * @return
+     */
     protected abstract Path mergeFile(List<Path> filePaths);
 }

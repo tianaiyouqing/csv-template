@@ -44,7 +44,10 @@ public class CsvTemplateBuilder {
      * 默认是本地类型的.
      */
     private TemplateType type = TemplateType.LOCAL;
-
+    /**
+     * 是否使用多路模板， 目前只是本地类型的支持多路模板
+     */
+    private Boolean multipart = true;
     /**
      * 临时文件地址.
      */
@@ -64,7 +67,7 @@ public class CsvTemplateBuilder {
      */
     private OssProperties ossProperties;
 
-    private Boolean multpart = true;
+
     private String fileName;
 
     public static CsvDataConverter addConverter(CsvDataConverter converter) {
@@ -124,7 +127,7 @@ public class CsvTemplateBuilder {
         return this;
     }
     public CsvTemplateBuilder local(boolean multpart) {
-        this.multpart = multpart;
+        this.multipart = multpart;
         return type(TemplateType.LOCAL);
     }
 
@@ -171,7 +174,7 @@ public class CsvTemplateBuilder {
 
     private CsvTemplate createLocalTemplate() {
         CsvTemplate csvTemplate;
-        if (multpart) {
+        if (multipart) {
             csvTemplate = new LocalFileMultipleCsvTemplate(tempFileDirectory, memoryStorageCapacity, threshold);
         } else {
             csvTemplate = new LocalFileCsvTemplate(tempFileDirectory, memoryStorageCapacity, threshold);
