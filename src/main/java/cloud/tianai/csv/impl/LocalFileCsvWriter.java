@@ -2,38 +2,48 @@ package cloud.tianai.csv.impl;
 
 import cloud.tianai.csv.Path;
 import cloud.tianai.csv.exception.CsvException;
-import cloud.tianai.csv.util.FileUtils;
 import cloud.tianai.csv.util.PathUtils;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
 import java.net.MalformedURLException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * @Author: 天爱有情
  * @Date: 2019/11/15 18:11
  * @Description: 使用本地文件的方式进行缓存
+ * todo 2020年1月2日17:47:15 修改追加文件为顺序写
  */
-public class LocalFileCsvTemplate extends AbstractLazyRefreshCsvTemplate {
+@Slf4j
+public class LocalFileCsvWriter extends AbstractLazyRefreshCsvWriter {
 
     @Setter
     @Getter
     private String tempFileDirectory;
 
-    private FileOutputStream fos;
-    private FileChannel channel;
+    /** 文件流管道 */
+    private FileChannel fileChannel;
 
     private File execFile;
 
-    public LocalFileCsvTemplate(String tempFileDirectory, Integer memoryStorageCapacity, Integer threshold) {
+    /** 写的时候需要加的锁 */
+    private ReentrantLock putDataNormalLock = new ReentrantLock();
+
+    /** 写的位点 */
+    protected final AtomicInteger wrotePosition = new AtomicInteger(0);
+
+    public LocalFileCsvWriter(String tempFileDirectory, Integer memoryStorageCapacity, Integer threshold) {
         super(memoryStorageCapacity, threshold);
 
         if (!tempFileDirectory.endsWith("/")) {
@@ -45,37 +55,30 @@ public class LocalFileCsvTemplate extends AbstractLazyRefreshCsvTemplate {
         this.tempFileDirectory = tempFileDirectory + format;
     }
 
-    public LocalFileCsvTemplate() {
+    public LocalFileCsvWriter() {
         this("./temp/", 1024, 1024);
     }
 
     @Override
     protected void refreshStorage(String data) {
         ByteBuffer byteBuffer = StandardCharsets.UTF_8.encode(data);
+        putDataNormalLock.lock();
         try {
-            FileLock lock = channel.lock();
-            channel.write(byteBuffer);
-            lock.release();
-        } catch (IOException e) {
+            appendData(data.getBytes(Charset.forName("utf-8")));
+        } catch (Exception e) {
             e.printStackTrace();
             throw new CsvException(e);
+        }finally {
+            putDataNormalLock.unlock();
         }
     }
 
     @Override
     protected Path innerFinish() {
         // 关闭管道流
-        if (channel != null) {
+        if (fileChannel != null) {
             try {
-                channel.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        // 关闭文件流
-        if (fos != null) {
-            try {
-                fos.close();
+                fileChannel.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -100,28 +103,17 @@ public class LocalFileCsvTemplate extends AbstractLazyRefreshCsvTemplate {
             }
         }
         // 创建空文件
-        try {
-            FileUtils.createEmptyFile(execFile);
-        } catch (IOException e) {
-            throw new CsvException(e);
-        }
+        ensureDirOK(execFile.getParent());
 
         // 创建流
         try {
-            fos = new FileOutputStream(execFile);
-            channel = fos.getChannel();
+            fileChannel = new RandomAccessFile(execFile, "rw").getChannel();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             throw new CsvException(e);
         }
         // 指定头为utf-8
-        try {
-            channel.write(ByteBuffer.wrap(new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF}));
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new CsvException(e);
-        }
-
+        appendData(new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF});
         // 包装返回值数据
         try {
             Path path = new Path(execFile.getPath(), execFile.toURI().toURL(), true);
@@ -129,6 +121,16 @@ public class LocalFileCsvTemplate extends AbstractLazyRefreshCsvTemplate {
         } catch (MalformedURLException e) {
             e.printStackTrace();
             throw new CsvException(e);
+        }
+    }
+
+    public static void ensureDirOK(final String dirName) {
+        if (dirName != null) {
+            File f = new File(dirName);
+            if (!f.exists()) {
+                boolean result = f.mkdirs();
+                log.info(dirName + " mkdir " + (result ? "OK" : "Failed"));
+            }
         }
     }
 
@@ -143,5 +145,18 @@ public class LocalFileCsvTemplate extends AbstractLazyRefreshCsvTemplate {
             // 文件不存在
             throw new CsvException(e);
         }
+    }
+
+    public boolean appendData(byte[] data) {
+        int currentPos = wrotePosition.get();
+        try {
+            this.fileChannel.position(currentPos);
+            this.fileChannel.write(ByteBuffer.wrap(data));
+            this.wrotePosition.addAndGet(data.length);
+            return true;
+        } catch (IOException e) {
+            log.error("Error occurred when append message to mappedFile.", e);
+        }
+        return  false;
     }
 }

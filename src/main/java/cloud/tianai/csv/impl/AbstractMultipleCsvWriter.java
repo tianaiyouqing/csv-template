@@ -5,11 +5,10 @@ import cloud.tianai.csv.exception.CsvException;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-public abstract class AbstractMultipleCsvTemplate extends AbstractLazyRefreshCsvTemplate {
+public abstract class AbstractMultipleCsvWriter extends AbstractLazyRefreshCsvWriter {
 
     /**
      * 默认文件最大行数为10W条.
@@ -25,7 +24,7 @@ public abstract class AbstractMultipleCsvTemplate extends AbstractLazyRefreshCsv
      * 执行过包括正在执行的csv模板
      */
     @Getter
-    private List<AbstractLazyRefreshCsvTemplate> csvTemplateList = new LinkedList<>();
+    private List<AbstractLazyRefreshCsvWriter> csvTemplateList = new LinkedList<>();
 
     /**
      * 所有生成的文件路径
@@ -35,20 +34,20 @@ public abstract class AbstractMultipleCsvTemplate extends AbstractLazyRefreshCsv
     /**
      * 当前正在执行的模板
      */
-    private AbstractLazyRefreshCsvTemplate currentCsvTemplate;
+    private AbstractLazyRefreshCsvWriter currentCsvTemplate;
 
-    public AbstractMultipleCsvTemplate(Integer memoryStorageCapacity, Integer threshold) {
+    public AbstractMultipleCsvWriter(Integer memoryStorageCapacity, Integer threshold) {
         super(memoryStorageCapacity, threshold);
     }
 
-    public AbstractMultipleCsvTemplate() {
+    public AbstractMultipleCsvWriter() {
     }
 
     @Override
     protected void doInit() throws CsvException {
         super.doInit();
         setPath(initMultiplePath());
-        AbstractLazyRefreshCsvTemplate csvTemplate = createNewCsvTemplate(getFileName());
+        AbstractLazyRefreshCsvWriter csvTemplate = createNewCsvTemplate(getFileName());
         csvTemplateList.add(csvTemplate);
         currentCsvTemplate = csvTemplate;
     }
@@ -98,7 +97,7 @@ public abstract class AbstractMultipleCsvTemplate extends AbstractLazyRefreshCsv
      * @param fileName
      * @return
      */
-    protected abstract AbstractLazyRefreshCsvTemplate createNewCsvTemplate(String fileName);
+    protected abstract AbstractLazyRefreshCsvWriter createNewCsvTemplate(String fileName);
 
     /**
      * 初始化多文件路径

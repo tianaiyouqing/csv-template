@@ -10,20 +10,25 @@ import java.util.Map;
 /**
  * @Author: 天爱有情
  * @Date: 2019/11/15 15:54
- * @Description: CSV 模板
+ * @Description: CSV 写模板
  */
-public interface CsvTemplate {
+public interface CsvWriter {
 
     /**
      * 初始化
      */
     void init();
 
-    /** 设置文件名称. */
+    /**
+     * 设置文件名称.
+     */
     void setFileName(String fileName);
 
-    /** 获取文件名称. */
+    /**
+     * 获取文件名称.
+     */
     String getFileName();
+
     /**
      * 获取路径
      *
@@ -66,7 +71,7 @@ public interface CsvTemplate {
      * @param converter
      * @return
      */
-    CsvDataConverter addConverter(CsvDataConverter converter);
+    void addConverter(CsvDataConverter converter);
 
     /**
      * 一次性添加多个converter
@@ -77,18 +82,21 @@ public interface CsvTemplate {
 
     /**
      * 获取表头数据
+     *
      * @return
      */
     List<Object> getTitleData();
 
     /**
      * 获取表头转换后的str
+     *
      * @return
      */
     String getTitleStr();
 
     /**
      * 获取输出流， 必须是在执行了finish方法之后才能获取文件流
+     *
      * @return InputStream
      */
     InputStream getInputStream();

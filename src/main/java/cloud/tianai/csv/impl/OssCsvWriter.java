@@ -27,7 +27,7 @@ import java.util.Objects;
  * @Description: OSS客户端
  */
 @Slf4j
-public class OssCsvTemplate extends AbstractLazyRefreshCsvTemplate {
+public class OssCsvWriter extends AbstractLazyRefreshCsvWriter {
 
     private String endpoint;
     private String accessKeyId;
@@ -41,12 +41,12 @@ public class OssCsvTemplate extends AbstractLazyRefreshCsvTemplate {
     private Integer index = -1;
     private String fileKey;
 
-    public OssCsvTemplate() {
+    public OssCsvWriter() {
     }
 
-    public OssCsvTemplate(Integer memoryStorageCapacity,
-                          Integer threshold,
-                          OssProperties ossProperties) {
+    public OssCsvWriter(Integer memoryStorageCapacity,
+                        Integer threshold,
+                        OssProperties ossProperties) {
         super(memoryStorageCapacity, threshold);
         this.endpoint = ossProperties.getEndpoint();
         this.accessKeyId = ossProperties.getAccessKeyId();

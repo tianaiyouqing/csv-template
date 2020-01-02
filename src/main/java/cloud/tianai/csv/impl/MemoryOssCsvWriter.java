@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets;
  * @Date: 2019/12/13 20:53
  * @Description: 内存版的csv模板
  */
-public class MemoryOssCsvTemplate extends AbstractCsvTemplate {
+public class MemoryOssCsvWriter extends AbstractCsvWriter {
 
     /**
      * 基于byte数组的输出流.

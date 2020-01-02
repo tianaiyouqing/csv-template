@@ -13,13 +13,13 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class LocalFileMultipleCsvTemplate extends AbstractMultipleCsvTemplate {
+public class LocalFileMultipleCsvWriter extends AbstractMultipleCsvWriter {
 
     private File compressFile;
     private String compressFileName;
     private String tempFileDirectory;
 
-    public LocalFileMultipleCsvTemplate(String tempFileDirectory, Integer memoryStorageCapacity, Integer threshold) {
+    public LocalFileMultipleCsvWriter(String tempFileDirectory, Integer memoryStorageCapacity, Integer threshold) {
         super(memoryStorageCapacity, threshold);
         if (!tempFileDirectory.endsWith("/")) {
             tempFileDirectory += "/";
@@ -31,16 +31,17 @@ public class LocalFileMultipleCsvTemplate extends AbstractMultipleCsvTemplate {
     }
 
     @Override
-    protected AbstractLazyRefreshCsvTemplate createNewCsvTemplate(String fileName) {
+    protected AbstractLazyRefreshCsvWriter createNewCsvTemplate(String fileName) {
         String warpFileName = warpFileName(compressFileName);
-        LocalFileCsvTemplate localFileCsvTemplate = new LocalFileCsvTemplate();
+        LocalFileCsvWriter localFileCsvWriter = new LocalFileCsvWriter();
         // 共用同一个内存数据
-        localFileCsvTemplate.setMemoryStorage(super.getMemoryStorage());
-        localFileCsvTemplate.setFileName(warpFileName);
-        localFileCsvTemplate.init();
+        System.out.println("生成 LocalFileCsvWriter2");
+        localFileCsvWriter.setMemoryStorage(super.getMemoryStorage());
+        localFileCsvWriter.setFileName(warpFileName);
+        localFileCsvWriter.setCsvObjectSerializable(getCsvObjectSerializable());
+        localFileCsvWriter.init();
         // 添加转换器
-        localFileCsvTemplate.setConverterMap(getConverterMap());
-        return localFileCsvTemplate;
+        return localFileCsvWriter;
     }
 
     private String warpFileName(String fileName) {

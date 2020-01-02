@@ -1,9 +1,8 @@
 package cloud.tianai.csv.impl;
 
-import cloud.tianai.csv.CsvTemplate;
-import cloud.tianai.csv.CsvTemplateBuilder;
+import cloud.tianai.csv.CsvWriter;
+import cloud.tianai.csv.CsvWriterBuilder;
 import cloud.tianai.csv.Path;
-import cloud.tianai.csv.converter.*;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -17,7 +16,7 @@ public class CsvTemplateTest {
 
     public static void main(String[] args) throws InterruptedException {
         // 创建本地Template
-        CsvTemplate localCsvTemplate = CsvTemplateBuilder.build()
+        CsvWriter localCsvWriter = CsvWriterBuilder.build()
                 .local()
                 .memoryStorageCapacity(2048)
                 .threshold(2048)
@@ -54,12 +53,12 @@ public class CsvTemplateTest {
 //        localCsvTemplate.addConverter(new DoubleCsvDataConverter());
 //        localCsvTemplate.addConverter(new UrlCsvDataConverter());
 //        localCsvTemplate.addConverter(new UriCsvDataConverter());
-        execute(localCsvTemplate);
+        execute(localCsvWriter);
         System.out.println("await---");
         countDownLatch.await();
     }
 
-    private static void execute(CsvTemplate csvTemplate) {
+    private static void execute(CsvWriter csvWriter) {
         List<Object> title = new ArrayList<>();
 
         title.add("订单ID");
@@ -88,23 +87,25 @@ public class CsvTemplateTest {
         title.add("退款时间");
         title.add("创建时间");
         title.add("更新时间");
-        csvTemplate.append(title);
+        csvWriter.append(title);
 
         new Thread(() -> {
-            while (!csvTemplate.isFinish()) {
+            long start = System.currentTimeMillis();
+            while (!csvWriter.isFinish()) {
                 try {
                     TimeUnit.SECONDS.sleep(2);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                Long rowNumber = csvTemplate.getRowNumber();
+                Long rowNumber = csvWriter.getRowNumber();
                 System.out.println("已添加 [" + rowNumber + "] 条数据.");
             }
-            System.out.println("最终数据: " + csvTemplate.getRowNumber());
+            System.out.println("最终数据: " + csvWriter.getRowNumber());
+            System.out.println("共耗时:" + (System.currentTimeMillis() - start));
             countDownLatch.countDown();
         }).start();
 
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 10000000; i++) {
             List<Object> data = new ArrayList<>();
 
             data.add(1000000 + i);
@@ -133,13 +134,13 @@ public class CsvTemplateTest {
             data.add(new Date());
             data.add(new Date());
             data.add(System.currentTimeMillis());
-            csvTemplate.append(data);
+            csvWriter.append(data);
         }
         long begin = System.currentTimeMillis();
-        Path path = csvTemplate.finish();
+        Path path = csvWriter.finish();
         long end = System.currentTimeMillis();
         System.out.println("finish耗时:" + (end - begin) +"毫秒");
-        InputStream inputStream = csvTemplate.getInputStream();
+        InputStream inputStream = csvWriter.getInputStream();
         System.out.println(path);
         System.out.println(inputStream);
     }

@@ -1,10 +1,12 @@
 package cloud.tianai.csv.impl;
 
 import cloud.tianai.csv.CsvDataConverter;
-import cloud.tianai.csv.CsvTemplate;
+import cloud.tianai.csv.CsvWriter;
 import cloud.tianai.csv.Path;
 import cloud.tianai.csv.converter.*;
 import cloud.tianai.csv.exception.CsvException;
+import cloud.tianai.csv.serialize.CsvObjectSerializable;
+import cloud.tianai.csv.serialize.impl.DefaultCsvObjectSerializable;
 import cloud.tianai.csv.util.ClassUtils;
 import cloud.tianai.csv.util.ResolvableType;
 import lombok.Getter;
@@ -21,20 +23,24 @@ import java.util.concurrent.atomic.AtomicLong;
  * @Description: 抽象的csv模板实现
  */
 @Slf4j
-public abstract class AbstractCsvTemplate implements CsvTemplate {
-    /**
-     * 数据转换器
-     */
-    @Setter
-    @Getter
-    private Map<Type, CsvDataConverter<Object>> converterMap = new HashMap<>(255);
+public abstract class AbstractCsvWriter implements CsvWriter {
+//    /**
+//     * 数据转换器
+//     */
+//    @Setter
+//    @Getter
+//    private Map<Type, CsvDataConverter<Object>> converterMap = new HashMap<>(255);
+//
+//    /**
+//     * 默认的数据转换器
+//     */
+//    @Setter
+//    @Getter
+//    private CsvDataConverter<Object> defaultCstDataConverter = new DefaultCsvConverter();
 
-    /**
-     * 默认的数据转换器
-     */
     @Setter
     @Getter
-    private CsvDataConverter<Object> defaultCstDataConverter = new DefaultCsvConverter();
+    private CsvObjectSerializable csvObjectSerializable;
 
     /**
      * 当前的path路径.
@@ -95,7 +101,17 @@ public abstract class AbstractCsvTemplate implements CsvTemplate {
     public void init() {
         // 标记状态为一已执行初始化方法
         this.init = true;
+        // 初始化 csvObjectSerializable
+        initCsvObjectSerializable();
+        // 子类实现
         doInit();
+    }
+
+    protected void initCsvObjectSerializable() {
+        if(Objects.isNull(this.csvObjectSerializable)) {
+            // 如果为空，则创建默认的csvObjectSerializable
+            csvObjectSerializable = createCsvObjectSerializable();
+        }
     }
 
     @Override
@@ -112,7 +128,7 @@ public abstract class AbstractCsvTemplate implements CsvTemplate {
             throw new CsvException("append data fail， please exec init() method or this csv is finished.");
         }
         // 转换成字符串数组
-        List<String> converterData = converter(datas);
+        List<String> converterData = serialize(datas);
         // 合并成一行数据
         String joinStr = getLine(converterData);
         synchronized (lockKey) {
@@ -126,6 +142,28 @@ public abstract class AbstractCsvTemplate implements CsvTemplate {
         }
         // 记录总数
         addRowNumber(1L);
+    }
+
+    protected List<String> serialize(List<Object> datas) {
+        CsvObjectSerializable csvObjectSerializable = getCsvObjectSerializable();
+        if(Objects.isNull(csvObjectSerializable)) {
+            throw new CsvException("serialize fail, CsvObjectSerializable in null");
+        }
+        List<String> serialize = csvObjectSerializable.serialize(datas);
+        return serialize;
+    }
+
+    private CsvObjectSerializable createCsvObjectSerializable() {
+        DefaultCsvObjectSerializable serializable = new DefaultCsvObjectSerializable();
+        serializable.addConverter(new BooleanCsvDataConverter());
+        serializable.addConverter(new DateCsvDataConverter());
+        serializable.addConverter(new DoubleCsvDataConverter());
+        serializable.addConverter(new IntegerCsvDataConverter());
+        serializable.addConverter(new LongCsvDataConverter());
+        serializable.addConverter(new StringCsvDataConverter());
+        serializable.addConverter(new UriCsvDataConverter());
+        serializable.addConverter(new UrlCsvDataConverter());
+        return serializable;
     }
 
     protected void setTitle(List<Object> data, String dataStr) {
@@ -143,47 +181,6 @@ public abstract class AbstractCsvTemplate implements CsvTemplate {
         return joinStr + csvLineFeedIdent;
     }
 
-    protected List<String> converter(List<Object> datas) {
-        List<String> converterDatas = new ArrayList<>(datas.size());
-        for (int index = 0; index < datas.size(); index++) {
-            Object data = datas.get(index);
-            String converterData = beforeConverter(data);
-            if (Objects.nonNull(converterData)) {
-                converterDatas.add(converterData);
-                continue;
-            }
-            Type dataType = ClassUtils.getDataType(data);
-            CsvDataConverter<Object> csvDataConverter = getConverter(dataType);
-            if (Objects.isNull(csvDataConverter)) {
-                // 使用默认的数据转换器
-                csvDataConverter = defaultCstDataConverter;
-            }
-
-            // 使用数据转换器转换
-            converterData = csvDataConverter.converter(index, data);
-
-            if (Objects.isNull(converterData)) {
-                throw new CsvException("转换数据失败， 转换得到的数据为空， " +
-                        "type [" + data + "]," +
-                        " data [" + data.toString() + "], " +
-                        "converter [ " + csvDataConverter + "]");
-            }
-            converterDatas.add(converterData);
-        }
-        return converterDatas;
-    }
-
-    /**
-     * 通过type类型获取converter
-     *
-     * @param dataType converter
-     * @return CsvDataConverter<Object>
-     */
-    protected CsvDataConverter<Object> getConverter(Type dataType) {
-        CsvDataConverter<Object> csvDataConverter = converterMap.get(dataType);
-        return csvDataConverter;
-    }
-
     /**
      * 添加converter转换器
      *
@@ -191,24 +188,19 @@ public abstract class AbstractCsvTemplate implements CsvTemplate {
      * @return 如果有旧的converter，则返回旧的CsvDataConverter
      */
     @Override
-    public CsvDataConverter addConverter(CsvDataConverter converter) {
-        ResolvableType resolvableType = ResolvableType.forClass(converter.getClass()).as(CsvDataConverter.class);
-        ResolvableType[] generics = resolvableType.getGenerics();
-        if(generics.length < 1 || generics[0].resolve() == null) {
-           throw new  CsvException("add[CsvDataConverter] fail, match not Type.");
+    public void addConverter(CsvDataConverter converter) {
+        if(Objects.isNull(this.csvObjectSerializable)) {
+            throw new CsvException("addConverter fail, CsvObjectSerializable in null");
         }
-        Class<?> type =  generics[0].resolve();
-        CsvDataConverter<Object> oldDataConverter = converterMap.get(type);
-        converterMap.put(type, (CsvDataConverter<Object>) converter);
-        return oldDataConverter;
+        this.csvObjectSerializable.addConverter(converter);
     }
 
     @Override
     public void addAllConverter(Map<Type, CsvDataConverter<Object>> converterMap) {
-        if(converterMap == null || converterMap.isEmpty()) {
-            throw new CsvException("adll allConverter fail, param is null.");
+        if(Objects.isNull(this.csvObjectSerializable)) {
+            throw new CsvException("addConverter fail, CsvObjectSerializable in null");
         }
-        this.converterMap.putAll(converterMap);
+        this.csvObjectSerializable.addConverter(converterMap);
     }
 
     @Override

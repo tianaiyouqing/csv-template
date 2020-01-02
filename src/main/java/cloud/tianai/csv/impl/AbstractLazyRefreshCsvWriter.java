@@ -14,7 +14,7 @@ import java.util.Objects;
  * @Description: 异步刷新CSV模板， 等数据达到阈值后再进行刷盘操作，可以利用内存提升性能
  */
 @Slf4j
-public abstract class AbstractLazyRefreshCsvTemplate extends AbstractCsvTemplate {
+public abstract class AbstractLazyRefreshCsvWriter extends AbstractCsvWriter {
 
     /**
      * 内存存储.
@@ -33,7 +33,7 @@ public abstract class AbstractLazyRefreshCsvTemplate extends AbstractCsvTemplate
     /** 内存容量. */
     private Integer memoryStorageCapacity = 1024;
 
-    public AbstractLazyRefreshCsvTemplate(Integer memoryStorageCapacity, Integer threshold) {
+    public AbstractLazyRefreshCsvWriter(Integer memoryStorageCapacity, Integer threshold) {
         assert memoryStorageCapacity < 1;
         assert threshold < 1;
         this.memoryStorageCapacity = memoryStorageCapacity;
@@ -49,7 +49,7 @@ public abstract class AbstractLazyRefreshCsvTemplate extends AbstractCsvTemplate
         }
     }
 
-    public AbstractLazyRefreshCsvTemplate() {
+    public AbstractLazyRefreshCsvWriter() {
         this(1024, 1024);
     }
 
