@@ -18,9 +18,6 @@ public class DefaultCsvReader implements CsvReader {
 
     @Override
     public <T> CsvReadResult<T> read(InputStream inputStream, Function<List<String>, T> parse, Object position) {
-//        inputStream.read(null, null, null);
-        Scanner scanner = new Scanner(inputStream);
-//        scanner.nextLine()
         InputStreamReader reader = new InputStreamReader(inputStream);
         LineNumberReader lineNumberReader = new LineNumberReader(reader);
 
