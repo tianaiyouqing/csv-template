@@ -4,7 +4,12 @@ import cloud.tianai.csv.exception.CsvException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.WritableByteChannel;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -31,32 +36,20 @@ public class ZipUtils {
             }
             zipFileOutputStream = new FileOutputStream(zipFile);
             zipOutputStream = new ZipOutputStream(zipFileOutputStream);
+            WritableByteChannel writableByteChannel = Channels.newChannel(zipOutputStream);
+
             ZipEntry zipEntry;
-            FileInputStream fis = null;
             for (File srcFile : srcFiles) {
                 try {
                     if (srcFile.exists()) {
+                        FileChannel fileChannel = new FileInputStream(srcFile).getChannel();
                         zipEntry = new ZipEntry(srcFile.getName());
+                        long size = srcFile.getTotalSpace();
                         zipOutputStream.putNextEntry(zipEntry);
-                        int len = 0;
-                        // 缓存
-                        byte[] buffer = new byte[1024];
-                        fis = new FileInputStream(srcFile);
-                        while ((len = fis.read(buffer)) > 0) {
-                            zipOutputStream.write(buffer, 0, len);
-                            zipOutputStream.flush();
-                        }
+                        fileChannel.transferTo(0, size, writableByteChannel);
                     }
                 } catch (IOException e) {
                     log.error("zip压缩失败, e={}", e);
-                } finally {
-                    if(fis != null) {
-                        try {
-                            fis.close();
-                        } catch (IOException e) {
-                            log.warn("zip压缩警告， io流关闭异常, e={}", e);
-                        }
-                    }
                 }
             }
         } catch (FileNotFoundException e) {
@@ -79,5 +72,4 @@ public class ZipUtils {
             }
         }
     }
-
 }
