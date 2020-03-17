@@ -9,16 +9,10 @@ pipeline {
 
     stages {
         stage('echo') {
-            node("checkout"){
-                def myRepo = checkout scm
-                def gitCommit = myRepo.GIT_COMMIT
-                def gitBranch = myRepo.GIT_BRANCH
-                def imageTag = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-            }
             steps {
-                echo 'gitCommit: ${gitCommit}'
-                echo 'gitBranch: ${gitBranch}'
-                echo 'imageTag: ${imageTag}'
+                echo 'gitCommit:'
+                echo 'gitBranch:'
+                echo 'imageTag:'
             }
         }
         stage("input") {
