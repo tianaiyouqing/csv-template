@@ -8,9 +8,12 @@ pipeline {
     stages {
         stage('echo') {
             steps {
-                echo 'gitCommit:'
-                echo 'gitBranch:'
-                echo 'imageTag:'
+                script {
+                    def mvnRep = checkout scm;
+                    sh "echo 'gitCommit:'${mvnRep.GIT_COMMIT}"
+                    sh "echo 'gitBranch:'"
+                    sh "echo 'imageTag:'"
+                }
             }
         }
         stage("input") {
