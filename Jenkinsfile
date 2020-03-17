@@ -1,4 +1,3 @@
-Jenkinsfile (DeclarativePipeline)
 pipeline {
     agent {
         docker {
@@ -6,7 +5,6 @@ pipeline {
           args '-v /root/.m2:/root/.m2'
         }
     }
-
     stages {
         stage('echo') {
             steps {
