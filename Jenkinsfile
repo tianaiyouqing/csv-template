@@ -6,12 +6,15 @@ pipeline {
           args '-v /root/.m2:/root/.m2'
         }
     }
-     myRepo = checkout scm
-     gitCommit = myRepo.GIT_COMMIT
-     gitBranch = myRepo.GIT_BRANCH
+
      imageTag = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
     stages {
         stage('echo') {
+            node("checkout"){
+                def myRepo = checkout scm
+                def gitCommit = myRepo.GIT_COMMIT
+                def gitBranch = myRepo.GIT_BRANCH
+            }
             steps {
                 echo 'gitCommit: ${gitCommit}'
                 echo 'gitBranch: ${gitBranch}'
