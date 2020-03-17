@@ -7,13 +7,13 @@ pipeline {
         }
     }
 
-     imageTag = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
     stages {
         stage('echo') {
             node("checkout"){
                 def myRepo = checkout scm
                 def gitCommit = myRepo.GIT_COMMIT
                 def gitBranch = myRepo.GIT_BRANCH
+                def imageTag = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
             }
             steps {
                 echo 'gitCommit: ${gitCommit}'
