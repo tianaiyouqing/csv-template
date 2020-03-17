@@ -12,9 +12,11 @@ pipeline {
     def imageTag = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
     stages {
         stage('echo') {
-            echo 'gitCommit: ${gitCommit}'
-            echo 'gitBranch: ${gitBranch}'
-            echo 'imageTag: ${imageTag}'
+            steps {
+                echo 'gitCommit: ${gitCommit}'
+                echo 'gitBranch: ${gitBranch}'
+                echo 'imageTag: ${imageTag}'
+            }
         }
         stage("input") {
             input {
