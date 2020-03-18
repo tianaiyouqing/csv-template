@@ -47,7 +47,7 @@ public class CsvWriterBuilder {
 
     private String fileName;
 
-    public static CsvWriterBuilder build() {
+    public static CsvWriterBuilder builder() {
         return new CsvWriterBuilder();
     }
 
@@ -96,7 +96,7 @@ public class CsvWriterBuilder {
         return type(TemplateType.LOCAL);
     }
 
-    public CsvWriter builder() {
+    public CsvWriter build() {
         switch (type) {
             case OSS:
                 return createOssTemplate();
@@ -123,8 +123,8 @@ public class CsvWriterBuilder {
         return this;
     }
 
-    public CsvWriter builderAndInit() {
-        CsvWriter csvWriter = builder();
+    public CsvWriter buildAndInit() {
+        CsvWriter csvWriter = build();
         init(csvWriter);
         return csvWriter;
     }

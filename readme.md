@@ -17,17 +17,13 @@
  
     创建本地文件式的模板
     ```java
-        CsvTemplate localCsvTemplate = CsvTemplateBuilder.build()
-                // 指定类型为本地
-                .local()
-                // 设置内存容量， 可以使用默认的
-                .memoryStorageCapacity(1024)
-                // 设置阈值， 一般设置的和内存容量一样即可， 可为空
-                .threshold(1024)
-                // 指定临时文件地址
-                .tempFileDirectory("./csv-temp")
-                // build And 初始化， 给定一个文件名称， 可以重复
-                .builderAndInit("temp.csv");
+          CsvWriter localCsvWriter = CsvWriterBuilder.builder()
+              .local()
+              .memoryStorageCapacity(2048)
+              .threshold(2048)
+              .tempFileDirectory("./temp")
+              .fileName("temp.csv")
+              .buildAndInit();
     ```
     创建OSS文件式的模板 
     ```java
@@ -37,40 +33,40 @@
         properties.setBucketName("csv-temp");
         properties.setAccessKeyId("xxx");
         properties.setAccessKeySecret("xxx");
-        
-        CsvTemplate ossCsvTemplate = CsvTemplateBuilder.build()
-                // 指定为OSS类型， 并且设置oss的属性
-                .oss(properties)
-                .memoryStorageCapacity(1024)
-                .threshold(1024)
-                .tempFileDirectory("./csv-temp")
-                .builderAndInit("temp.csv");
+
+       CsvWriter localCsvWriter = CsvWriterBuilder.builder()
+               .oss(properties)
+               .memoryStorageCapacity(2048)
+               .threshold(2048)
+               .tempFileDirectory("./temp")
+               .fileName("temp.csv")
+               .buildAndInit();
     ```
     创建纯内存模板
     ```java
-    CsvTemplate localCsvTemplate = CsvTemplateBuilder.build()
+    CsvWriter localCsvWriter = CsvWriterBuilder.builder()
           .memory()
-          .builderAndInit();
+          .buildAndInit();
     ```
  ## 2. 添加数据
     ```java
       // 每次添加一行
-      csvTemplate.append(List<Object> datas); 
+      localCsvWriter.append(List<Object> datas); 
       // 添加完成后执行
-      csvTemplate.finish();
+      localCsvWriter.finish();
       // 获取路径 可以早期获取，（在finish前可以获取路径）
-      csvTemplate.getPath();
+      localCsvWriter.getPath();
       // 在添加过程中可以查看当前已经添加了多少行了
-      csvTemplate.getRowNumber()
+      localCsvWriter.getRowNumber()
       // 执行完 csvTemplate.finish(); 后可以获取文件InputStream
-      csvTemplate.getInputStream();
+      v.getInputStream();
     ```
  ## 3. 具体例子可以查看`CsvTemplateTest` 类
 # 该模板的优势
  
     1. 该工具包，轻松应对大数据量导出。
     2. 可动态监视当前导出行数， （可用作前端显示)
-    3. 扩展性强， 如果有同学用oss， 可以使用OssTemplate， 或者使用默认的LocalFileTemplate
+    3. 扩展性强， 如果有同学用oss， 可以使用OssCsvWrite， 或者使用默认的LocalFileTemplate
     4. 该工具包抽离数据转换器， 可自定义数据转换， 
         内置有 一些基本的数据转换
             BooleanCsvDataConverter,

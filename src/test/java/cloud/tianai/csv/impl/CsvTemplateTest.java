@@ -16,13 +16,13 @@ public class CsvTemplateTest {
 
     public static void main(String[] args) throws InterruptedException {
         // 创建本地Template
-        CsvWriter localCsvWriter = CsvWriterBuilder.build()
+        CsvWriter localCsvWriter = CsvWriterBuilder.builder()
                 .local()
                 .memoryStorageCapacity(2048)
                 .threshold(2048)
                 .tempFileDirectory("./temp")
                 .fileName("temp.csv")
-                .builderAndInit();
+                .buildAndInit();
 
         // 创建内存版的Template
 //        CsvTemplate localCsvTemplate = CsvTemplateBuilder.build()

@@ -5,7 +5,16 @@ pipeline {
           args '-v /root/.m2:/root/.m2'
         }
     }
+    parameters {
+        string defaultValue: '', description: '', name: 'test', trim: false
+    }
     stages {
+        script{
+            def mvnRep = checkout scm;
+            sh "echo 'gitCommit:'${mvnRep.GIT_COMMIT}"
+            sh "echo 'gitBranch:'"
+            sh "echo 'imageTag:'"
+        }
         stage('echo') {
             steps {
                 script {
