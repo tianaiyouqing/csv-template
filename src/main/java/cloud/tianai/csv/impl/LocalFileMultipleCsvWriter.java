@@ -35,7 +35,6 @@ public class LocalFileMultipleCsvWriter extends AbstractMultipleCsvWriter {
         String warpFileName = warpFileName(compressFileName);
         LocalFileCsvWriter localFileCsvWriter = new LocalFileCsvWriter();
         // 共用同一个内存数据
-        System.out.println("生成 LocalFileCsvWriter2");
         localFileCsvWriter.setMemoryStorage(super.getMemoryStorage());
         localFileCsvWriter.setFileName(warpFileName);
         localFileCsvWriter.setCsvObjectSerializable(getCsvObjectSerializable());

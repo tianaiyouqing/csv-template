@@ -40,14 +40,21 @@ public class LocalFileCsvWriter extends AbstractLazyRefreshCsvWriter {
     /** 写的时候需要加的锁 */
     private ReentrantLock putDataNormalLock = new ReentrantLock();
 
+    /** 正斜杠. */
+    public static final String FORWARD_SLASH = "/";
+    /** 反斜杠. */
+    public static final String BACK_SLASH = "\\\\";
+
     /** 写的位点 */
-    protected final AtomicInteger wrotePosition = new AtomicInteger(0);
+    protected final AtomicInteger writePosition = new AtomicInteger(0);
 
     public LocalFileCsvWriter(String tempFileDirectory, Integer memoryStorageCapacity, Integer threshold) {
         super(memoryStorageCapacity, threshold);
-
-        if (!tempFileDirectory.endsWith("/")) {
-            tempFileDirectory += "/";
+        if (tempFileDirectory.contains(BACK_SLASH)){
+            tempFileDirectory = tempFileDirectory.replaceAll(BACK_SLASH, FORWARD_SLASH);
+        }
+        if (!tempFileDirectory.endsWith(FORWARD_SLASH)) {
+            tempFileDirectory += FORWARD_SLASH;
         }
         LocalDateTime now = LocalDateTime.now();
         // 临时目录中加入时间区分
@@ -148,11 +155,11 @@ public class LocalFileCsvWriter extends AbstractLazyRefreshCsvWriter {
     }
 
     public boolean appendData(byte[] data) {
-        int currentPos = wrotePosition.get();
+        int currentPos = writePosition.get();
         try {
             this.fileChannel.position(currentPos);
             this.fileChannel.write(ByteBuffer.wrap(data));
-            this.wrotePosition.addAndGet(data.length);
+            this.writePosition.addAndGet(data.length);
             return true;
         } catch (IOException e) {
             log.error("Error occurred when append message to mappedFile.", e);
