@@ -85,6 +85,11 @@ public class LocalFileCsvWriter extends AbstractLazyRefreshCsvWriter {
         // 关闭管道流
         if (fileChannel != null) {
             try {
+                fileChannel.force(false);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
                 fileChannel.close();
             } catch (IOException e) {
                 e.printStackTrace();

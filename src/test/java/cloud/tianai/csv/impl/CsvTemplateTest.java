@@ -17,10 +17,10 @@ public class CsvTemplateTest {
     public static void main(String[] args) throws InterruptedException {
         // 创建本地Template
         CsvWriter localCsvWriter = CsvWriterBuilder.builder()
-                .local()
+                .local(false)
                 .memoryStorageCapacity(2048)
                 .threshold(2048)
-                .tempFileDirectory("./temp")
+                .tempFileDirectory("E:/")
                 .fileName("temp.csv")
                 .buildAndInit();
 
@@ -54,16 +54,16 @@ public class CsvTemplateTest {
 //        localCsvTemplate.addConverter(new UrlCsvDataConverter());
 //        localCsvTemplate.addConverter(new UriCsvDataConverter());
 
-        CsvWriter localCsvWriter2 = CsvWriterBuilder.builder()
-                .local()
-                .memoryStorageCapacity(2048)
-                .threshold(2048)
-                .tempFileDirectory("./temp2")
-                .fileName("temp.csv")
-                .buildAndInit();
+//        CsvWriter localCsvWriter2 = CsvWriterBuilder.builder()
+//                .local()
+//                .memoryStorageCapacity(2048)
+//                .threshold(2048)
+//                .tempFileDirectory("./temp2")
+//                .fileName("temp.csv")
+//                .buildAndInit();
 
         execute(localCsvWriter);
-        execute(localCsvWriter2);
+//        execute(localCsvWriter2);
         System.out.println("await---");
         countDownLatch.await();
     }
@@ -115,7 +115,7 @@ public class CsvTemplateTest {
             countDownLatch.countDown();
         }).start();
 
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 10000000; i++) {
             List<Object> data = new ArrayList<>();
 
             data.add(1000000 + i);
